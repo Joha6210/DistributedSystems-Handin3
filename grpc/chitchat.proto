@@ -1,0 +1,24 @@
+syntax = "proto3";
+package server;
+
+service ChitChat {
+   rpc PublishMessage (Message) returns (Response);
+   rpc Subscribe (Client) returns (stream Message);
+   rpc Unsubscribe (Client) returns (Response);
+}
+
+message Message{
+    string uuid = 1;
+    string message = 2;
+    int32 clock = 3;
+}
+
+message Response{
+    bool result = 1;
+    int32 clock = 3;
+} 
+
+message Client{
+    string uuid = 1;
+    int32 clock = 3;
+}

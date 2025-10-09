@@ -44,7 +44,7 @@ S7. When a participant receives any broadcast message, it must: i)
 display the message content and its logical timestamp on the client
 interface; and ii) log the message content and its logical timestamp.
 
-## :Technical Requirements:
+## : Technical Requirements :
 
 - The system must be implemented in Go
 
@@ -92,7 +92,7 @@ interface; and ii) log the message content and its logical timestamp.
   and a server) and it must be able to handle "join" of at least one
   client and "leave" of at least one client
 
-## Hand-in Requirements
+## : Hand-in Requirements :
 
 - you must hand in a report (single pdf file) via LearnIT
 

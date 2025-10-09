@@ -1,5 +1,5 @@
 syntax = "proto3";
-package server;
+option go_package = ".";
 
 service ChitChat {
    rpc PublishMessage (Message) returns (Response);

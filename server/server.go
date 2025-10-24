@@ -5,6 +5,7 @@ import (
 	proto "handin3/grpc"
 	"log"
 	"net"
+
 	"google.golang.org/grpc"
 )
 
@@ -14,6 +15,7 @@ type ChitChatServer struct {
 
 var port string = ":5050"
 var messageHistory []*proto.Message
+var clients []*proto.Client
 
 var msgChan chan *proto.Message = make(chan *proto.Message)
 
@@ -38,6 +40,8 @@ func (s *ChitChatServer) start_server() {
 
 func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStreamingServer[proto.Message]) error {
 
+	clients = append(clients, client)
+
 	for _, msg := range messageHistory {
 		stream.Send(msg)
 	}
@@ -60,12 +64,19 @@ func (s *ChitChatServer) PublishMessage(ctx context.Context, message *proto.Mess
 	}, nil
 }
 
-
-//Is this needed, can the client just close the connection?
+// Is this needed, can the client just close the connection?
 func (s *ChitChatServer) Unsubscribe(client *proto.Client) (*proto.Response, error) {
-	
+
+	for i, cl := range clients {
+		if cl == client {
+			// Remove the element at index i
+			clients = append(clients[:i], clients[i+1:]...)
+			break
+		}
+	}
+
 	return &proto.Response{
 		Result: true,
 		Clock:  0,
-	},nil
+	}, nil
 }

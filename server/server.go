@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	proto "handin3/grpc"
 	"log"
 	"net"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 )
 
@@ -16,6 +18,8 @@ type ChitChatServer struct {
 	clients        []*proto.Client
 	msgChan        chan *proto.Message
 	clientChans    map[string]chan *proto.Message
+	uuid           string
+	clk            int
 }
 
 func main() {
@@ -34,6 +38,7 @@ func (s *ChitChatServer) start_server() {
 
 	s.clientChans = make(map[string]chan *proto.Message)
 	s.msgChan = make(chan *proto.Message, 100)
+	s.uuid = uuid.New().String()
 
 	proto.RegisterChitChatServer(grpcServer, s)
 	log.Printf("gRPC server now listening on %s... \n", s.port)
@@ -43,6 +48,9 @@ func (s *ChitChatServer) start_server() {
 
 func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStreamingServer[proto.Message]) error {
 	log.Printf("Client subscribed: %s", client.Username)
+
+	msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s joined Chit Chat at logical time %d", client.Username, s.clk)}
+	s.PublishMessage(context.Background(), &msg)
 
 	s.clients = append(s.clients, client)
 	ch := make(chan *proto.Message, 10)
@@ -74,6 +82,7 @@ func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStrea
 }
 
 func (s *ChitChatServer) PublishMessage(ctx context.Context, message *proto.Message) (*proto.Response, error) {
+	s.clk = s.clk + 1
 	s.messageHistory = append(s.messageHistory, message)
 	for _, ch := range s.clientChans {
 		// Non-blocking send
@@ -93,6 +102,9 @@ func (s *ChitChatServer) PublishMessage(ctx context.Context, message *proto.Mess
 func (s *ChitChatServer) Unsubscribe(ctx context.Context, client *proto.Client) (*proto.Response, error) {
 	ch, ok := s.clientChans[client.Uuid]
 	if ok {
+		log.Printf("Client unsubscribed: %s", client.Username)
+		msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s left Chit Chat at logical time %d", client.Username, s.clk)}
+		s.PublishMessage(context.Background(), &msg)
 		close(ch) // this will make the streaming loop in Subscribe exit
 		delete(s.clientChans, client.Uuid)
 	}

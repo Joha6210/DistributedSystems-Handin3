@@ -79,7 +79,8 @@ func (c *ChitChatClient) handle_message(proto_client proto.ChitChatClient, cance
 			}
 			log.Printf("Could not unsubscribe! %s \n", err)
 		}
-		message := proto.Message{Uuid: c.client.Uuid, Message: text, Clock: c.clk + 1, Username: c.client.Username, Timestamp: time.Now().Format("02-01-2006 15:04:05")}
+		c.clk = c.clk + 1
+		message := proto.Message{Uuid: c.client.Uuid, Message: text, Clock: c.clk, Username: c.client.Username, Timestamp: time.Now().Format("02-01-2006 15:04:05")}
 		response, err := proto_client.PublishMessage(context.Background(), &message)
 
 		if err != nil {
@@ -112,6 +113,10 @@ func (c *ChitChatClient) handle_incoming(proto_client proto.ChitChatClient) {
 			break
 		}
 
-		fmt.Printf("[%s]%s: %s", message.Timestamp, message.Username, message.Message)
+		if message.Clock > c.clk {
+			c.clk = message.Clock //Update to highest clock
+		}
+
+		fmt.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
 	}
 }

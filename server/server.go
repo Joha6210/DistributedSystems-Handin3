@@ -60,11 +60,12 @@ func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStrea
 	// Streaming loop
 	for {
 		select {
-		case msg := <-ch:
-			if err := stream.Send(msg); err != nil {
-				log.Printf("Error sending message to %s: %v", client.Username, err)
-				return err
+		case msg, ok := <-ch:
+			if !ok {
+				log.Printf("Stream closed for %s", client.Username)
+				return nil
 			}
+			stream.Send(msg)
 		case <-stream.Context().Done():
 			log.Printf("Client disconnected: %s", client.Username)
 			return nil
@@ -90,10 +91,15 @@ func (s *ChitChatServer) PublishMessage(ctx context.Context, message *proto.Mess
 
 // Is this needed, can the client just close the connection?
 func (s *ChitChatServer) Unsubscribe(ctx context.Context, client *proto.Client) (*proto.Response, error) {
+	ch, ok := s.clientChans[client.Uuid]
+	if ok {
+		close(ch) // this will make the streaming loop in Subscribe exit
+		delete(s.clientChans, client.Uuid)
+	}
 
+	// Remove from clients list
 	for i, cl := range s.clients {
 		if cl == client {
-			// Remove the element at index i
 			s.clients = append(s.clients[:i], s.clients[i+1:]...)
 			break
 		}

@@ -20,6 +20,7 @@ type ChitChatServer struct {
 	clientChans    map[string]chan *proto.Message
 	uuid           string
 	clk            int
+	name           string
 }
 
 func main() {
@@ -39,6 +40,7 @@ func (s *ChitChatServer) start_server() {
 	s.clientChans = make(map[string]chan *proto.Message)
 	s.msgChan = make(chan *proto.Message, 100)
 	s.uuid = uuid.New().String()
+	s.name = "Server"
 
 	proto.RegisterChitChatServer(grpcServer, s)
 	log.Printf("gRPC server now listening on %s... \n", s.port)
@@ -49,7 +51,7 @@ func (s *ChitChatServer) start_server() {
 func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStreamingServer[proto.Message]) error {
 	log.Printf("Client subscribed: %s", client.Username)
 
-	msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s joined Chit Chat at logical time %d", client.Username, s.clk)}
+	msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s joined Chit Chat at logical time %d", client.Username, s.clk), Username: s.name, Clock: int32(s.clk)}
 	s.PublishMessage(context.Background(), &msg)
 
 	s.clients = append(s.clients, client)
@@ -82,7 +84,7 @@ func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStrea
 }
 
 func (s *ChitChatServer) PublishMessage(ctx context.Context, message *proto.Message) (*proto.Response, error) {
-	s.clk = s.clk + 1
+	s.clk = max(s.clk, int(message.Clock)) + 1
 	s.messageHistory = append(s.messageHistory, message)
 	for _, ch := range s.clientChans {
 		// Non-blocking send
@@ -103,7 +105,7 @@ func (s *ChitChatServer) Unsubscribe(ctx context.Context, client *proto.Client) 
 	ch, ok := s.clientChans[client.Uuid]
 	if ok {
 		log.Printf("Client unsubscribed: %s", client.Username)
-		msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s left Chit Chat at logical time %d", client.Username, s.clk)}
+		msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s left Chit Chat at logical time %d", client.Username, s.clk), Username: s.name, Clock: int32(s.clk)}
 		s.PublishMessage(context.Background(), &msg)
 		close(ch) // this will make the streaming loop in Subscribe exit
 		delete(s.clientChans, client.Uuid)

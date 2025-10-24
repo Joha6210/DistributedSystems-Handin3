@@ -113,9 +113,7 @@ func (c *ChitChatClient) handle_incoming(proto_client proto.ChitChatClient) {
 			break
 		}
 
-		if message.Clock > c.clk {
-			c.clk = message.Clock //Update to highest clock
-		}
+		c.clk = max(c.clk, message.Clock) + 1
 
 		fmt.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
 	}

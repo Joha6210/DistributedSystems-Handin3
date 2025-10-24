@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"fmt"
 	proto "handin3/grpc"
 	"io"
 	"log"
@@ -15,21 +16,32 @@ import (
 )
 
 type ChitChatClient struct {
-	proto.UnimplementedChitChatServer
 }
 
 var client proto.Client
 var clk int32 = 0
 
 func main() {
-	client := &ChitChatClient{}
+	ccclient := &ChitChatClient{}
 
-	client.start_client()
+	ccclient.start_client()
 }
 
 func (c *ChitChatClient) start_client() {
+
+	//Default values
+	username := "John Doe"
+	serverAddr := "127.0.0.1:5050"
+
+	if len(os.Args) > 1 {
+		username = os.Args[1]
+	}
+	if len(os.Args) > 2 {
+		serverAddr = os.Args[2]
+	}
+
 	opts := grpc.WithTransportCredentials(insecure.NewCredentials())
-	conn, err := grpc.NewClient("127.0.0.1:5050", opts)
+	conn, err := grpc.NewClient(serverAddr, opts)
 
 	if err != nil {
 		log.Fatalf("Something went wrong! %s", err.Error())
@@ -37,7 +49,7 @@ func (c *ChitChatClient) start_client() {
 
 	proto_client := proto.NewChitChatClient(conn)
 
-	client = proto.Client{Uuid: uuid.New().String(), Username: "John Doe", Clock: clk}
+	client = proto.Client{Uuid: uuid.New().String(), Username: username, Clock: clk}
 
 	go handle_incoming(proto_client)
 
@@ -52,15 +64,15 @@ func handle_message(proto_client proto.ChitChatClient) {
 
 	for {
 		text, _ := reader.ReadString('\n')
-		message := proto.Message{Uuid: client.Uuid, Message: text, Clock: clk + 1, Username: client.Username, Timestamp: time.Now().Format("24-10-2025 11:37:05")}
+		message := proto.Message{Uuid: client.Uuid, Message: text, Clock: clk + 1, Username: client.Username, Timestamp: time.Now().Format("02-01-2006 15:04:05")}
 		response, err := proto_client.PublishMessage(context.Background(), &message)
 
 		if err != nil {
 			log.Printf("Something went wrong! %s \n", err)
 		}
-
-		log.Printf("%t", response.Result)
-		log.Printf("%s", message.Timestamp)
+		if response.Result != true {
+			log.Println("Server did not receive message!")
+		}
 	}
 
 }
@@ -72,15 +84,19 @@ func handle_incoming(proto_client proto.ChitChatClient) {
 		log.Printf("Subscribe failed: %v", err)
 	}
 
+	log.Println("✅ Subscribed successfully. Listening for messages...")
+
 	for {
 		message, err := stream.Recv()
 		if err == io.EOF {
-			log.Printf("Stream closed!")
+			log.Println("Server closed stream.")
 			break
 		}
 		if err != nil {
-			log.Fatalf("%v.Subscribe(_) = _, %v", proto_client, err)
+			log.Printf("Error receiving: %v", err)
+			break
 		}
-		log.Println(message.Message)
+
+		fmt.Printf("[%s @ %s]: %s", message.Username, message.Timestamp, message.Message)
 	}
 }

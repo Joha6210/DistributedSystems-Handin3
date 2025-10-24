@@ -23,9 +23,11 @@ const (
 
 type Message struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Uuid          string                 `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
+	Uuid          string                 `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"` // user id
 	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	Clock         int32                  `protobuf:"varint,3,opt,name=clock,proto3" json:"clock,omitempty"`
+	Clock         int32                  `protobuf:"varint,3,opt,name=clock,proto3" json:"clock,omitempty"` //Logical clock
+	Username      string                 `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
+	Timestamp     string                 `protobuf:"bytes,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -81,10 +83,24 @@ func (x *Message) GetClock() int32 {
 	return 0
 }
 
+func (x *Message) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *Message) GetTimestamp() string {
+	if x != nil {
+		return x.Timestamp
+	}
+	return ""
+}
+
 type Response struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Result        bool                   `protobuf:"varint,1,opt,name=result,proto3" json:"result,omitempty"`
-	Clock         int32                  `protobuf:"varint,3,opt,name=clock,proto3" json:"clock,omitempty"`
+	Clock         int32                  `protobuf:"varint,3,opt,name=clock,proto3" json:"clock,omitempty"` //Logical clock
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -136,7 +152,8 @@ func (x *Response) GetClock() int32 {
 type Client struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Uuid          string                 `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
-	Clock         int32                  `protobuf:"varint,3,opt,name=clock,proto3" json:"clock,omitempty"`
+	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	Clock         int32                  `protobuf:"varint,3,opt,name=clock,proto3" json:"clock,omitempty"` //Logical clock
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -178,6 +195,13 @@ func (x *Client) GetUuid() string {
 	return ""
 }
 
+func (x *Client) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
 func (x *Client) GetClock() int32 {
 	if x != nil {
 		return x.Clock
@@ -189,16 +213,19 @@ var File_chitchat_proto protoreflect.FileDescriptor
 
 const file_chitchat_proto_rawDesc = "" +
 	"\n" +
-	"\x0echitchat.proto\"M\n" +
+	"\x0echitchat.proto\"\x87\x01\n" +
 	"\aMessage\x12\x12\n" +
 	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x14\n" +
-	"\x05clock\x18\x03 \x01(\x05R\x05clock\"8\n" +
+	"\x05clock\x18\x03 \x01(\x05R\x05clock\x12\x1a\n" +
+	"\busername\x18\x04 \x01(\tR\busername\x12\x1c\n" +
+	"\ttimestamp\x18\x05 \x01(\tR\ttimestamp\"8\n" +
 	"\bResponse\x12\x16\n" +
 	"\x06result\x18\x01 \x01(\bR\x06result\x12\x14\n" +
-	"\x05clock\x18\x03 \x01(\x05R\x05clock\"2\n" +
+	"\x05clock\x18\x03 \x01(\x05R\x05clock\"N\n" +
 	"\x06Client\x12\x12\n" +
-	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12\x14\n" +
+	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
 	"\x05clock\x18\x03 \x01(\x05R\x05clock2v\n" +
 	"\bChitChat\x12%\n" +
 	"\x0ePublishMessage\x12\b.Message\x1a\t.Response\x12 \n" +

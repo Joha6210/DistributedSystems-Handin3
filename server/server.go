@@ -28,7 +28,7 @@ type ChitChatServer struct {
 func main() {
 
 	//Start up and configure logging output to file
-	f, err := os.OpenFile("serverlog"+time.Now().Format("20060102150405")+".log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	f, err := os.OpenFile("logs/serverlog"+time.Now().Format("20060102150405")+".log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}

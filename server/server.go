@@ -87,8 +87,8 @@ func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStrea
 	// Streaming loop
 	for {
 		select {
-		case msg, ok := <-ch:
-			if !ok {
+		case msg, leave := <-ch:
+			if !leave {
 				log.Printf("Stream closed for %s (%s) at logical time: %d", client.Username, client.Uuid, client.Clock)
 				return nil
 			}
@@ -101,28 +101,30 @@ func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStrea
 }
 
 func (s *ChitChatServer) PublishMessage(ctx context.Context, message *proto.Message) (*proto.Response, error) {
-	s.clk = max(s.clk, int(message.Clock)) + 1
-	s.messageHistory = append(s.messageHistory, message)
-	for _, ch := range s.clientChans {
+	s.clk = max(s.clk, int(message.Clock)) + 1 //Update the lamport clock and increase by one.
+
+	fmt.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
+	log.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
+
+	s.messageHistory = append(s.messageHistory, message) //Save the new message to the history
+	for _, ch := range s.clientChans {                   //Broadcast the message to the clients
 		select {
 		case ch <- message:
 		default:
 		}
 	}
 
-	fmt.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
-	log.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
-
+	s.clk = s.clk + 1
 	return &proto.Response{
 		Result: true,
-		Clock:  0,
+		Clock:  int32(s.clk),
 	}, nil
 }
 
-// Is this needed, can the client just close the connection?
 func (s *ChitChatServer) Unsubscribe(ctx context.Context, client *proto.Client) (*proto.Response, error) {
-	ch, ok := s.clientChans[client.Uuid]
-	if ok {
+	var result bool = false
+	ch, leave := s.clientChans[client.Uuid]
+	if leave {
 		log.Printf("Participant %s left Chit Chat at logical time %d", client.Username, s.clk)
 		oldClk := s.clk
 		s.clk = s.clk + 1
@@ -130,18 +132,22 @@ func (s *ChitChatServer) Unsubscribe(ctx context.Context, client *proto.Client) 
 		s.PublishMessage(context.Background(), &msg)
 		close(ch) // this will make the streaming loop in Subscribe exit
 		delete(s.clientChans, client.Uuid)
-	}
 
-	// Remove from clients list
-	for i, cl := range s.clients {
-		if cl == client {
-			s.clients = append(s.clients[:i], s.clients[i+1:]...)
-			break
+		// Remove from clients list
+		for i, cl := range s.clients {
+			if cl == client {
+				s.clients = append(s.clients[:i], s.clients[i+1:]...)
+				break
+			}
 		}
-	}
 
+		result = true
+
+	}
+	s.clk = s.clk + 1
 	return &proto.Response{
-		Result: true,
-		Clock:  0,
+		Result: result,
+		Clock:  int32(s.clk),
 	}, nil
+
 }

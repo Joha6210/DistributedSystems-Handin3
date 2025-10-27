@@ -77,14 +77,31 @@ _Trace a sequence of RPC calls and Lamport timestamps corresponding to a specifi
 
 ```mermaid
 sequenceDiagram
-    participant ClientX
+    participant Client1
+    participant Client2
+    participant Client3
     participant Server
-    ClientX->>Server: Join Request (LT=1)
-    Server-->>ClientX: Ack Join (LT=2)
-    ClientX->>Server: Publish Message (LT=3)
-    Server-->>ClientX: Confirm Publish (LT=4)
-    ClientX->>Server: Leave Request (LT=5)
-    Server-->>ClientX: Ack Leave (LT=6)
+    Client1->>Server: Subscribe Request (LT=1)
+    Server->>Client1: Return Message stream (LT=2)
+    Server-->>Client1: Broadcast that client 1 has joined (LT=3)
+    Client2->>Server: Subscribe Request (LT=1)
+    Server->>Client2: Return Message stream (LT=2)
+    Server-->>Client1: Broadcast that client 2 has joined (LT=3)
+    Server-->>Client2: Broadcast that client 2 has joined (LT=3)
+    Client3->>Server: Subscribe Request (LT=1)
+    Server->>Client3: Return Message stream (LT=2)
+    Server-->>Client1: Broadcast that client 3 has joined (LT=3)
+    Server-->>Client2: Broadcast that client 3 has joined (LT=3)
+    Server-->>Client3: Broadcast that client 3 has joined (LT=3)
+    Client1->>Server: Publish Message (LT=3)
+    Server-->>Client2: Broadcast message  (LT=3)
+    Server-->>Client3: Broadcast message (LT=3)
+    Server->>Client1: Confirm Publish (LT=4)
+    Client1->>Server: Leave Request (LT=5)
+    Server-->>Client1: Broadcast that client 1 has left (LT=3)
+    Server-->>Client2: Broadcast that client 1 has left (LT=3)
+    Server-->>Client3: Broadcast that client 1 has left (LT=3)
+    Server->>Client1: Ack Leave (LT=6)
 ```
 
 Generate proto files:

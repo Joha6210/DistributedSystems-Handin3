@@ -17,11 +17,11 @@ type ChitChatServer struct {
 	proto.UnimplementedChitChatServer
 	port           string
 	messageHistory []*proto.Message
-	clients        []*proto.Client
+	clients        map[string]*proto.Client
 	msgChan        chan *proto.Message
 	clientChans    map[string]chan *proto.Message
 	uuid           string
-	clk            int
+	clk            int32
 	name           string
 }
 
@@ -53,9 +53,12 @@ func (s *ChitChatServer) start_server() {
 	}
 
 	s.clientChans = make(map[string]chan *proto.Message)
+	s.clients = make(map[string]*proto.Client)
 	s.msgChan = make(chan *proto.Message, 100)
 	s.uuid = uuid.New().String()
 	s.name = "Server"
+
+	s.clients[s.uuid] = &proto.Client{Username: s.name}
 
 	proto.RegisterChitChatServer(grpcServer, s)
 	log.Printf("gRPC server now listening on %s... at logical time: %d \n", s.port, s.clk)
@@ -71,15 +74,16 @@ func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStrea
 	msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s joined Chit Chat at logical time %d", client.Username, oldClk), Username: s.name, Clock: int32(s.clk)}
 	s.PublishMessage(context.Background(), &msg)
 
-	s.clients = append(s.clients, client)
+	s.clients[client.Uuid] = client
 	ch := make(chan *proto.Message, 10)
 	s.clientChans[client.Uuid] = ch
 	defer delete(s.clientChans, client.Uuid)
+	defer delete(s.clients, client.Uuid)
 
 	// Send chat history
 	for _, msg := range s.messageHistory {
 		if err := stream.Send(msg); err != nil {
-			log.Printf("Error sending history to %s (%s) at logical time: %d, %s", client.Username, client.Uuid, client.Clock, err)
+			log.Printf("Error sending history to %s (%s) at logical time: %d, %s", client.Username, client.Uuid, s.clk, err)
 			return err
 		}
 	}
@@ -89,34 +93,40 @@ func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStrea
 		select {
 		case msg, leave := <-ch:
 			if !leave {
-				log.Printf("Stream closed for %s (%s) at logical time: %d", client.Username, client.Uuid, client.Clock)
+				log.Printf("Stream closed for %s (%s) at logical time: %d", client.Username, client.Uuid, s.clk)
 				return nil
 			}
 			stream.Send(msg)
 		case <-stream.Context().Done():
-			log.Printf("Client disconnected: %s (%s) at logical time: %d", client.Username, client.Uuid, client.Clock)
+			log.Printf("Client disconnected: %s (%s) at logical time: %d", client.Username, client.Uuid, s.clk)
 			return nil
 		}
 	}
 }
 
 func (s *ChitChatServer) PublishMessage(ctx context.Context, message *proto.Message) (*proto.Response, error) {
-	s.clk = max(s.clk, int(message.Clock)) + 1 //Update the lamport clock and increase by one.
+	result := false
+	_, ok := s.clients[message.Uuid]
+	if ok {
+		s.clk = max(s.clk, message.Clock) + 1 //Receive and maybe update the lamport clock and increase by one.
 
-	fmt.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
-	log.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
+		fmt.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
+		log.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
 
-	s.messageHistory = append(s.messageHistory, message) //Save the new message to the history
-	for _, ch := range s.clientChans {                   //Broadcast the message to the clients
-		select {
-		case ch <- message:
-		default:
+		s.messageHistory = append(s.messageHistory, message) //Save the new message to the history
+		for _, ch := range s.clientChans {                   //Broadcast the message to the clients
+			select {
+			case ch <- message:
+			default:
+			}
 		}
+
+		result = true
 	}
 
 	s.clk = s.clk + 1
 	return &proto.Response{
-		Result: true,
+		Result: result,
 		Clock:  int32(s.clk),
 	}, nil
 }
@@ -132,14 +142,7 @@ func (s *ChitChatServer) Unsubscribe(ctx context.Context, client *proto.Client) 
 		s.PublishMessage(context.Background(), &msg)
 		close(ch) // this will make the streaming loop in Subscribe exit
 		delete(s.clientChans, client.Uuid)
-
-		// Remove from clients list
-		for i, cl := range s.clients {
-			if cl == client {
-				s.clients = append(s.clients[:i], s.clients[i+1:]...)
-				break
-			}
-		}
+		delete(s.clients, client.Uuid)
 
 		result = true
 

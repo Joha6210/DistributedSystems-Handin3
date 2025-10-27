@@ -71,6 +71,8 @@ func (c *ChitChatClient) start_client() {
 
 	go c.handle_incoming(proto_client)
 
+	fmt.Println("Connected successfully!")
+
 	c.handle_message(proto_client, cancel)
 
 	defer conn.Close()

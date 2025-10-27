@@ -6,6 +6,7 @@ import (
 	proto "handin3/grpc"
 	"log"
 	"net"
+	"os"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -24,6 +25,14 @@ type ChitChatServer struct {
 }
 
 func main() {
+
+	//Start up and configure logging output file
+	f, err := os.OpenFile("log"+ti, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+
 	server := &ChitChatServer{}
 
 	server.start_server()
@@ -105,6 +114,7 @@ func (s *ChitChatServer) Unsubscribe(ctx context.Context, client *proto.Client) 
 	ch, ok := s.clientChans[client.Uuid]
 	if ok {
 		log.Printf("Client unsubscribed: %s", client.Username)
+		s.clk = s.clk + 1
 		msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s left Chit Chat at logical time %d", client.Username, s.clk), Username: s.name, Clock: int32(s.clk)}
 		s.PublishMessage(context.Background(), &msg)
 		close(ch) // this will make the streaming loop in Subscribe exit

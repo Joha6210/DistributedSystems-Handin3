@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -26,12 +27,17 @@ type ChitChatServer struct {
 
 func main() {
 
-	//Start up and configure logging output file
-	f, err := os.OpenFile("log"+ti, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	//Start up and configure logging output to file
+	f, err := os.OpenFile("serverlog"+time.Now().Format("20060102150405")+".log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		log.Fatalf("error opening file: %v", err)
+		log.Fatal(err)
 	}
+
+	//defer to close when we are done with it.
 	defer f.Close()
+
+	//set output of logs to f
+	log.SetOutput(f)
 
 	server := &ChitChatServer{}
 
@@ -58,9 +64,11 @@ func (s *ChitChatServer) start_server() {
 }
 
 func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStreamingServer[proto.Message]) error {
-	log.Printf("Client subscribed: %s", client.Username)
+	log.Printf("Participant %s joined Chit Chat at logical time %d", client.Username, s.clk)
 
-	msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s joined Chit Chat at logical time %d", client.Username, s.clk), Username: s.name, Clock: int32(s.clk)}
+	oldClk := s.clk
+	s.clk = s.clk + 1
+	msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s joined Chit Chat at logical time %d", client.Username, oldClk), Username: s.name, Clock: int32(s.clk)}
 	s.PublishMessage(context.Background(), &msg)
 
 	s.clients = append(s.clients, client)
@@ -68,7 +76,7 @@ func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStrea
 	s.clientChans[client.Uuid] = ch
 	defer delete(s.clientChans, client.Uuid)
 
-	// Send message history
+	// Send chat history
 	for _, msg := range s.messageHistory {
 		if err := stream.Send(msg); err != nil {
 			log.Printf("Error sending history to %s: %v", client.Username, err)
@@ -96,12 +104,13 @@ func (s *ChitChatServer) PublishMessage(ctx context.Context, message *proto.Mess
 	s.clk = max(s.clk, int(message.Clock)) + 1
 	s.messageHistory = append(s.messageHistory, message)
 	for _, ch := range s.clientChans {
-		// Non-blocking send
 		select {
 		case ch <- message:
 		default:
 		}
 	}
+
+	fmt.Printf("Message received: ")
 
 	return &proto.Response{
 		Result: true,
@@ -113,9 +122,10 @@ func (s *ChitChatServer) PublishMessage(ctx context.Context, message *proto.Mess
 func (s *ChitChatServer) Unsubscribe(ctx context.Context, client *proto.Client) (*proto.Response, error) {
 	ch, ok := s.clientChans[client.Uuid]
 	if ok {
-		log.Printf("Client unsubscribed: %s", client.Username)
+		log.Printf("Participant %s left Chit Chat at logical time %d", client.Username, s.clk)
+		oldClk := s.clk
 		s.clk = s.clk + 1
-		msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s left Chit Chat at logical time %d", client.Username, s.clk), Username: s.name, Clock: int32(s.clk)}
+		msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s left Chit Chat at logical time %d", client.Username, oldClk), Username: s.name, Clock: int32(s.clk)}
 		s.PublishMessage(context.Background(), &msg)
 		close(ch) // this will make the streaming loop in Subscribe exit
 		delete(s.clientChans, client.Uuid)

@@ -22,6 +22,7 @@ type ChitChatClient struct {
 }
 
 func main() {
+
 	ccclient := &ChitChatClient{}
 
 	ccclient.start_client()
@@ -44,6 +45,18 @@ func (c *ChitChatClient) start_client() {
 	if len(os.Args) > 2 {
 		serverAddr = os.Args[2]
 	}
+
+	//Start up and configure logging output to file
+	f, err := os.OpenFile("client"+username+"log"+time.Now().Format("20060102150405")+".log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//defer to close when we are done with it.
+	defer f.Close()
+
+	//set output of logs to f
+	log.SetOutput(f)
 
 	opts := grpc.WithTransportCredentials(insecure.NewCredentials())
 	conn, err := grpc.NewClient(serverAddr, opts)
@@ -97,10 +110,10 @@ func (c *ChitChatClient) handle_incoming(proto_client proto.ChitChatClient) {
 	stream, err := proto_client.Subscribe(context.Background(), &c.client)
 
 	if err != nil {
-		log.Printf("Subscribe failed: %v", err)
+		log.Fatalf("Subscribe failed: %v", err)
+	} else {
+		log.Println("Subscribed successfully. Listening for messages...")
 	}
-
-	log.Println("✅ Subscribed successfully. Listening for messages...")
 
 	for {
 		message, err := stream.Recv()
@@ -114,7 +127,7 @@ func (c *ChitChatClient) handle_incoming(proto_client proto.ChitChatClient) {
 		}
 
 		c.clk = max(c.clk, message.Clock) + 1
-
+		log.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
 		fmt.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
 	}
 }

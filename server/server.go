@@ -49,7 +49,7 @@ func (s *ChitChatServer) start_server() {
 	grpcServer := grpc.NewServer()
 	listener, err := net.Listen("tcp", s.port)
 	if err != nil {
-		log.Fatalf("Did not work")
+		log.Fatalf("Could not create server due to: %v", err)
 	}
 
 	s.clientChans = make(map[string]chan *proto.Message)
@@ -58,7 +58,7 @@ func (s *ChitChatServer) start_server() {
 	s.name = "Server"
 
 	proto.RegisterChitChatServer(grpcServer, s)
-	log.Printf("gRPC server now listening on %s... \n", s.port)
+	log.Printf("gRPC server now listening on %s... at logical time: %d \n", s.port, s.clk)
 	grpcServer.Serve(listener)
 
 }
@@ -79,7 +79,7 @@ func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStrea
 	// Send chat history
 	for _, msg := range s.messageHistory {
 		if err := stream.Send(msg); err != nil {
-			log.Printf("Error sending history to %s: %v", client.Username, err)
+			log.Printf("Error sending history to %s (%s) at logical time: %d, %s", client.Username, client.Uuid, client.Clock, err)
 			return err
 		}
 	}
@@ -89,12 +89,12 @@ func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStrea
 		select {
 		case msg, ok := <-ch:
 			if !ok {
-				log.Printf("Stream closed for %s", client.Username)
+				log.Printf("Stream closed for %s (%s) at logical time: %d", client.Username, client.Uuid, client.Clock)
 				return nil
 			}
 			stream.Send(msg)
 		case <-stream.Context().Done():
-			log.Printf("Client disconnected: %s", client.Username)
+			log.Printf("Client disconnected: %s (%s) at logical time: %d", client.Username, client.Uuid, client.Clock)
 			return nil
 		}
 	}
@@ -110,7 +110,8 @@ func (s *ChitChatServer) PublishMessage(ctx context.Context, message *proto.Mess
 		}
 	}
 
-	fmt.Printf("Message received: ")
+	fmt.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
+	log.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
 
 	return &proto.Response{
 		Result: true,

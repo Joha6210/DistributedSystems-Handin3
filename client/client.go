@@ -47,7 +47,7 @@ func (c *ChitChatClient) start_client() {
 	}
 
 	//Start up and configure logging output to file
-	f, err := os.OpenFile("client"+username+"log"+time.Now().Format("20060102150405")+".log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	f, err := os.OpenFile("logs/client"+username+"log"+time.Now().Format("20060102150405")+".log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -89,8 +89,10 @@ func (c *ChitChatClient) handle_message(proto_client proto.ChitChatClient, cance
 			if response.Result {
 				cancel()
 				break
+			} else {
+				log.Printf("Could not unsubscribe! %s \n", err)
 			}
-			log.Printf("Could not unsubscribe! %s \n", err)
+
 		}
 		c.clk = c.clk + 1
 		message := proto.Message{Uuid: c.client.Uuid, Message: text, Clock: c.clk, Username: c.client.Username, Timestamp: time.Now().Format("02-01-2006 15:04:05")}
@@ -99,7 +101,7 @@ func (c *ChitChatClient) handle_message(proto_client proto.ChitChatClient, cance
 		if err != nil {
 			log.Printf("Something went wrong! %s \n", err)
 		}
-		if response.Result != true {
+		if !response.Result {
 			log.Println("Server did not receive message!")
 		}
 	}

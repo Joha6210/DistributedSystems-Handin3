@@ -1,0 +1,15 @@
+2025/10/28 11:02:03 gRPC server now listening on :5050... at logical time: 0 
+2025/10/28 11:02:03 Participant Alice joined Chit Chat at logical time 1
+2025/10/28 11:02:03 [ @ 3] Server: Participant Alice joined Chit Chat at logical time 1 
+2025/10/28 11:03:04 Participant John joined Chit Chat at logical time 5
+2025/10/28 11:03:04 [ @ 7] Server: Participant John joined Chit Chat at logical time 5 
+2025/10/28 11:05:09 Participant Bob joined Chit Chat at logical time 9
+2025/10/28 11:05:09 [ @ 11] Server: Participant Bob joined Chit Chat at logical time 9 
+2025/10/28 11:14:48 [28-10-2025 11:14:48 @ 15] Alice: Hej 
+2025/10/28 11:20:38 Participant Alice left Chit Chat at logical time 17
+2025/10/28 11:20:38 [ @ 19] Server: Participant Alice left Chit Chat at logical time 17 
+2025/10/28 11:20:38 Stream closed for Alice (60f45023-390a-4349-a86c-728ce70337fe) at logical time: 21
+2025/10/28 11:24:43 [28-10-2025 11:24:43 @ 23] John:  
+2025/10/28 11:24:43 Client disconnected: John (5a5131c1-5686-4738-85ab-bff8345e2ffa) at logical time: 25
+2025/10/28 11:24:44 [28-10-2025 11:24:44 @ 27] Bob:  
+2025/10/28 11:24:44 Client disconnected: Bob (8a73753e-3380-4919-a413-f0c43ac4b11f) at logical time: 29

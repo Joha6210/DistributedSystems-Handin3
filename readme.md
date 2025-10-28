@@ -56,12 +56,6 @@ To keep parity across participants, any communication between parties include th
 
 ## 5. Sequence Diagram
 
-### 5.1 Interaction Flow
-
-_Trace a sequence of RPC calls and Lamport timestamps corresponding to a specific scenario (e.g., Client X joins, publishes, leaves)._
-
-### 5.2 Diagram
-
 LT refers to local server time, and is assumed to initialize at LT=0 for all parties.
 
 ```mermaid

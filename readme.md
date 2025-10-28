@@ -1,8 +1,12 @@
-# Distributed System Design and Implementation Report
+# Distributed Systems Handin 3 
 
-## Link to github repo
+BSDISYS1KU
+Carl ... & Johannes Jensen <johje@itu.dk>
+29-10-2025
 
 [https://github.com/Joha6210/DistributedSystems-Handin3](https://github.com/Joha6210/DistributedSystems-Handin3)
+
+<div class="page"/>
 
 ## 1. Streaming Model Selection
 

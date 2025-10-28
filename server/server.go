@@ -108,7 +108,10 @@ func (s *ChitChatServer) PublishMessage(ctx context.Context, message *proto.Mess
 	result := false
 	_, ok := s.clients[message.Uuid]
 	if ok {
-		s.clk = max(s.clk, message.Clock) + 1 //Receive and maybe update the lamport clock and increase by one.
+
+		if message.Username != s.name { //Don't do if the server is sending the message
+			s.clk = max(s.clk, message.Clock) + 1 //Receive and maybe update the lamport clock and increase by one.
+		}
 
 		fmt.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
 		log.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)

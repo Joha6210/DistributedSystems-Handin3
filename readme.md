@@ -75,12 +75,14 @@ _Trace a sequence of RPC calls and Lamport timestamps corresponding to a specifi
 
 ### 5.2 Diagram
 
+Clients and the server are initialized with the Lamport timestamp of 0
+
 ```mermaid
 sequenceDiagram
-    participant Client1
-    participant Client2
-    participant Client3
-    participant Server
+    participant Client1 
+    participant Client2 
+    participant Client3 
+    participant Server 
     Client1->>Server: Subscribe Request (LT=1)
     Server->>Client1: Return Message stream (LT=2)
     Server-->>Client1: Broadcast that client 1 has joined (LT=3)

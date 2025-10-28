@@ -115,7 +115,6 @@ interface; and ii) log the message content and its logical timestamp.
 
   - provide a diagram, that traces a sequence of RPC calls together
     with the Lamport timestamps, that corresponds to a chosen sequence
-
     of interactions: Client X joins, Client X Publishes, ..., Client X
     leaves.
 

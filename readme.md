@@ -1,9 +1,5 @@
 # Distributed System Design and Implementation Report
 
-## Link to github repo
-
-[https://github.com/Joha6210/DistributedSystems-Handin3](https://github.com/Joha6210/DistributedSystems-Handin3)
-
 ## 1. Streaming Model Selection
 
 ### 1.1 Discussion
@@ -28,28 +24,24 @@
 
 - **Client:** Clients can connect to the chit chat server using the 'subscribe' method, this is for the client to "register" at the server, and allows for the client to receive the message history and new messages that are being published by other clients. Registered clients can also publish new messages to the chit chat server, for other clients to receive.
 
-### 2.3 Communication Flow
-
-- _[Describe how components interact — include message flow, data handling, and synchronization methods.]_
-
----
-
 ## 3. RPC Methods and Message Types
 
 ### 3.1 Implemented RPC Methods
 
-| RPC Method | Type (Unary/Server Streaming/Client Streaming/Bidirectional) | Description |
-|-------------|-------------------------------------------------------------|--------------|
-| ExampleMethod | Unary | _[Description]_ |
-| ... | ... | ... |
+| RPC Method | Type (Unary/Server Streaming/Client Streaming/Bidirectional) | Description   |
+|-------------|-------------------------------------------------------------|-------------- |
+| PublishMessage (Message)| Unary             | Publishes Message object to server      |
+| Subscribe (Client)      | Server Streaming  | Adds client to server                   |
+| Unsubscribe (Client)    | Unary             | Removes client from server              |
 
 ### 3.2 Message Types
 
 | Message Name | Purpose | Fields |
 |---------------|----------|--------|
-| message Message | Contains the message and relevant information | `string uuid = 1; string message = 2; int32 clock = 3; string username = 4; string timestamp = 5;`  |
-| message Response | Contains a response from the server to a client | `bool result = 1; int32 clock = 3;`  |
-| message Client |   Contains information about a client  |  `string uuid = 1; string username = 2; int32 clock = 3;`  |
+| ExampleMessage | _[Description]_ | _[List of fields and data types]_ |
+| ... | ... | ... |
+
+---
 
 ## 4. Lamport Timestamp Implementation
 
@@ -78,14 +70,12 @@ _Trace a sequence of RPC calls and Lamport timestamps corresponding to a specifi
 
 ### 5.2 Diagram
 
-Clients and the server are initialized with the Lamport timestamp of 0
-
 ```mermaid
 sequenceDiagram
-    participant Client1 
-    participant Client2 
-    participant Client3 
-    participant Server 
+    participant Client1
+    participant Client2
+    participant Client3
+    participant Server
     Client1->>Server: Subscribe Request (LT=1)
     Server->>Client1: Return Message stream (LT=2)
     Server-->>Client1: Broadcast that client 1 has joined (LT=3)

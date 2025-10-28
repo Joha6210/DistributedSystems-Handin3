@@ -28,6 +28,8 @@
 
 - **Client:** Clients can connect to the chit chat server using the 'subscribe' method, this is for the client to "register" at the server, and allows for the client to receive the message history and new messages that are being published by other clients. Registered clients can also publish new messages to the chit chat server, for other clients to receive.
 
+<div class="page"/>
+
 ## 3. RPC Methods and Message Types
 
 ### 3.1 Implemented RPC Methods
@@ -45,6 +47,7 @@
 | message Message | Contains the message and relevant information | `string uuid = 1; string message = 2; int32 clock = 3; string username = 4; string timestamp = 5;`  |
 | message Response | Contains a response from the server to a client | `bool result = 1; int32 clock = 3;`  |
 | message Client |   Contains information about a client  |  `string uuid = 1; string username = 2; int32 clock = 3;`  |
+<div class="page"/>
 
 ## 4. Lamport Timestamp Implementation
 
@@ -72,6 +75,7 @@ t := max(t, t′) + 1
  deliver m to the application
 end on
 ```
+<div class="page"/>
 
 ## 5. Sequence Diagram
 

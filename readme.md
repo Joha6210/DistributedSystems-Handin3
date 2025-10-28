@@ -47,10 +47,9 @@
 
 | Message Name | Purpose | Fields |
 |---------------|----------|--------|
-| ExampleMessage | _[Description]_ | _[List of fields and data types]_ |
-| ... | ... | ... |
-
----
+| message Message | Contains the message and relevant information | `string uuid = 1; string message = 2; int32 clock = 3; string username = 4; string timestamp = 5;`  |
+| message Response | Contains a response from the server to a client | `bool result = 1; int32 clock = 3;`  |
+| message Client |   Contains information about a client  |  `string uuid = 1; string username = 2; int32 clock = 3;`  |
 
 ## 4. Lamport Timestamp Implementation
 

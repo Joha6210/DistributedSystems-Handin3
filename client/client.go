@@ -37,7 +37,7 @@ func (c *ChitChatClient) start_client() {
 	username := "John Doe"
 	serverAddr := "127.0.0.1:5050"
 
-	c.clk = 0
+	c.clk = 0 //Lamport Clock
 
 	if len(os.Args) > 1 {
 		username = os.Args[1]
@@ -100,38 +100,41 @@ func (c *ChitChatClient) handle_message(proto_client proto.ChitChatClient, cance
 		message := proto.Message{Uuid: c.client.Uuid, Message: text, Clock: c.clk, Username: c.client.Username, Timestamp: time.Now().Format("02-01-2006 15:04:05")}
 		response, err := proto_client.PublishMessage(context.Background(), &message)
 
+		c.clk = max(c.clk, response.Clock) + 1
+
 		if err != nil {
-			log.Printf("Something went wrong! %s \n", err)
+			log.Printf("[LT: %d] Something went wrong! %s \n", c.clk, err)
 		}
 		if !response.Result {
-			log.Println("Server did not receive message!")
+			log.Printf("[LT: %d] Server did not receive message!", c.clk)
 		}
 	}
 
 }
 
 func (c *ChitChatClient) handle_incoming(proto_client proto.ChitChatClient) {
+	c.clk = c.clk + 1
 	stream, err := proto_client.Subscribe(context.Background(), &c.client)
 
 	if err != nil {
-		log.Fatalf("Subscribe failed: %v", err)
+		log.Fatalf("[LT: %d] Subscribe failed: %v", c.clk, err)
 	} else {
-		log.Println("Subscribed successfully. Listening for messages...")
+		log.Printf("[LT: %d] Subscribed successfully. Listening for messages...", c.clk)
 	}
 
 	for {
 		message, err := stream.Recv()
 		if err == io.EOF {
-			log.Println("Server closed stream.")
+			log.Printf("[LT: %d] Server closed stream.", c.clk)
 			break
 		}
 		if err != nil {
-			log.Printf("Error receiving: %v", err)
+			log.Printf("[LT: %d] Error receiving: %v", c.clk, err)
 			break
 		}
 
 		c.clk = max(c.clk, message.Clock) + 1
-		log.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
-		fmt.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
+		log.Printf("[%s @ %d] %s: %s \n", message.Timestamp, c.clk, message.Username, message.Message)
+		fmt.Printf("[%s @ %d] %s: %s \n", message.Timestamp, c.clk, message.Username, message.Message)
 	}
 }

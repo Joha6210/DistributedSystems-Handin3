@@ -1,0 +1,7 @@
+2025/10/28 11:05:09 [LT: 1] Subscribed successfully. Listening for messages...
+2025/10/28 11:05:09 [ @ 5] Server: Participant Alice joined Chit Chat at logical time 1 
+2025/10/28 11:05:09 [ @ 9] Server: Participant John joined Chit Chat at logical time 5 
+2025/10/28 11:05:09 [ @ 13] Server: Participant Bob joined Chit Chat at logical time 9 
+2025/10/28 11:14:48 [28-10-2025 11:14:48 @ 17] Alice: Hej 
+2025/10/28 11:20:38 [ @ 21] Server: Participant Alice left Chit Chat at logical time 17 
+2025/10/28 11:24:43 [28-10-2025 11:24:43 @ 25] John:  

@@ -57,6 +57,7 @@ func (s *ChitChatServer) start_server() {
 	s.msgChan = make(chan *proto.Message, 100)
 	s.uuid = uuid.New().String()
 	s.name = "Server"
+	s.clk = 0
 
 	s.clients[s.uuid] = &proto.Client{Username: s.name}
 
@@ -67,11 +68,13 @@ func (s *ChitChatServer) start_server() {
 }
 
 func (s *ChitChatServer) Subscribe(client *proto.Client, stream grpc.ServerStreamingServer[proto.Message]) error {
-	log.Printf("Participant %s joined Chit Chat at logical time %d", client.Username, s.clk)
 
+	s.clk = max(client.Clock, s.clk) + 1
 	oldClk := s.clk
-	s.clk = s.clk + 1
-	msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s joined Chit Chat at logical time %d", client.Username, oldClk), Username: s.name, Clock: int32(s.clk)}
+
+	s.clk = s.clk + 1 //Accepts the subscription for the client
+	log.Printf("Participant %s joined Chit Chat at logical time %d", client.Username, oldClk)
+	msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s joined Chit Chat at logical time %d", client.Username, oldClk), Username: s.name, Clock: s.clk}
 	s.PublishMessage(context.Background(), &msg)
 
 	s.clients[client.Uuid] = client
@@ -108,29 +111,27 @@ func (s *ChitChatServer) PublishMessage(ctx context.Context, message *proto.Mess
 	result := false
 	_, ok := s.clients[message.Uuid]
 	if ok {
-
-		if message.Username != s.name { //Don't do if the server is sending the message
-			s.clk = max(s.clk, message.Clock) + 1 //Receive and maybe update the lamport clock and increase by one.
-		}
-
-		fmt.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
-		log.Printf("[%s @ %d] %s: %s \n", message.Timestamp, message.Clock, message.Username, message.Message)
+		s.clk = max(s.clk, message.Clock) + 1 //Receive and  update the lamport clock and increase by one.
+		fmt.Printf("[%s @ %d] %s: %s \n", message.Timestamp, s.clk, message.Username, message.Message)
+		log.Printf("[%s @ %d] %s: %s \n", message.Timestamp, s.clk, message.Username, message.Message)
 
 		s.messageHistory = append(s.messageHistory, message) //Save the new message to the history
-		for _, ch := range s.clientChans {                   //Broadcast the message to the clients
-			select {
-			case ch <- message:
-			default:
-			}
+		s.clk++                                              //Local send event
+		message.Clock = s.clk
+		for _, ch := range s.clientChans {
+			ch <- message
 		}
 
 		result = true
 	}
 
-	s.clk = s.clk + 1
+	if message.Uuid != s.uuid { //Do not increment if the server is the sender
+		s.clk++
+	}
+
 	return &proto.Response{
 		Result: result,
-		Clock:  int32(s.clk),
+		Clock:  s.clk,
 	}, nil
 }
 
@@ -140,7 +141,7 @@ func (s *ChitChatServer) Unsubscribe(ctx context.Context, client *proto.Client) 
 	if leave {
 		log.Printf("Participant %s left Chit Chat at logical time %d", client.Username, s.clk)
 		oldClk := s.clk
-		s.clk = s.clk + 1
+		s.clk = max(s.clk, client.Clock) + 1
 		msg := proto.Message{Uuid: s.uuid, Message: fmt.Sprintf("Participant %s left Chit Chat at logical time %d", client.Username, oldClk), Username: s.name, Clock: int32(s.clk)}
 		s.PublishMessage(context.Background(), &msg)
 		close(ch) // this will make the streaming loop in Subscribe exit
@@ -150,7 +151,7 @@ func (s *ChitChatServer) Unsubscribe(ctx context.Context, client *proto.Client) 
 		result = true
 
 	}
-	s.clk = s.clk + 1
+	s.clk++
 	return &proto.Response{
 		Result: result,
 		Clock:  int32(s.clk),

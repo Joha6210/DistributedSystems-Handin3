@@ -48,11 +48,30 @@
 
 ## 4. Lamport Timestamp Implementation
 
-### 4.1 Overview
-
 Anytime a client or a server receives a message, or is about to initialize an internal process, it's internal Lamport Timestamp(LT) is incremented by 1.
 
 To keep parity across participants, any communication between parties include the originators current LT, and the receiver adopts the larger between the received value and it's own
+
+
+
+on initialization do
+```
+t := 0  // each node has its own local variable t
+end on
+```
+
+on request to send message m do
+```
+t := t + 1; send (t, m) via the underlying network link
+end on
+```
+
+on receiving (t′,m) via the underlying network link do
+```
+t := max(t, t′) + 1
+ deliver m to the application
+end on
+```
 
 ## 5. Sequence Diagram
 

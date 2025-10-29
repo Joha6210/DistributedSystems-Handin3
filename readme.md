@@ -25,8 +25,12 @@ To create and connect with a client use the following command:
 ```
 go run client/client.go [USERNAME] [PORT]
 ```
-ex. 
 
+ex. To create a client with the username Alice and create a connection to the server on port :5050
+
+```
+go run client/client.go Alice :5050
+```
 
 ## 1. Streaming Model Selection
 

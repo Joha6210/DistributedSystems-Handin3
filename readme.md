@@ -1,7 +1,9 @@
 # Distributed Systems Handin 3 
 
 BSDISYS1KU
-Carl Philip Steuch <caps@itu.dk> & Johannes Jensen <johje@itu.dk>
+Carl Philip Steuch <caps@itu.dk>
+Johannes Jensen <johje@itu.dk>
+Niels Bay <nbay@itu.dk>
 29-10-2025
 
 [https://github.com/Joha6210/DistributedSystems-Handin3](https://github.com/Joha6210/DistributedSystems-Handin3)

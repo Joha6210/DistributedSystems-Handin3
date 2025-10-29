@@ -35,7 +35,8 @@ func (c *ChitChatClient) start_client() {
 
 	//Default values
 	username := "John Doe"
-	serverAddr := "127.0.0.1:5050"
+	serverAddr := "127.0.0.1"
+	serverPort := ":5050"
 
 	c.clk = 0 //Lamport Clock
 
@@ -43,8 +44,10 @@ func (c *ChitChatClient) start_client() {
 		username = os.Args[1]
 	}
 	if len(os.Args) > 2 {
-		serverAddr = os.Args[2]
+		serverPort = os.Args[2]
 	}
+
+	address := serverAddr + serverPort
 
 	//Start up and configure logging output to file
 	f, err := os.OpenFile("logs/client"+username+"log"+time.Now().Format("20060102150405")+".log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
@@ -59,7 +62,7 @@ func (c *ChitChatClient) start_client() {
 	log.SetOutput(f)
 
 	opts := grpc.WithTransportCredentials(insecure.NewCredentials())
-	conn, err := grpc.NewClient(serverAddr, opts)
+	conn, err := grpc.NewClient(address, opts)
 
 	if err != nil {
 		log.Fatalf("Something went wrong! %s", err.Error())

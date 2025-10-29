@@ -8,6 +8,25 @@ Carl Philip Steuch <caps@itu.dk> & Johannes Jensen <johje@itu.dk>
 
 <div class="page"/>
 
+## Instructions on how to run the server and clients
+
+To run the server use the following command:
+```
+go run server/server.go [:PORT]
+```
+ex. To open a server listening on port :5050
+```
+go run server/server.go :5050 
+```
+
+To create and connect with a client use the following command:
+
+```
+go run client/client.go [USERNAME] [PORT]
+```
+ex. 
+
+
 ## 1. Streaming Model Selection
 
 - In our chit chat implementation we use server-side streaming ([1](https://grpc.io/docs/languages/go/basics/#server-side-streaming-rpc)), to send multiple messages from the server to the client. This is done to support long-lived logical flow of data from the server to the clients ([2](https://grpc.io/docs/guides/performance/))
@@ -74,6 +93,7 @@ t := max(t, t′) + 1
  deliver m to the application
 end on
 ```
+
 <div class="page"/>
 
 ## 5. Sequence Diagram
@@ -167,3 +187,63 @@ sequenceDiagram
     end
     Server->>Client1: Ack Leave (LT=20)
 ```
+
+# Appendix
+
+## Logs
+
+### Server
+
+```
+2025/10/28 11:02:03 gRPC server now listening on :5050... at logical time: 0 
+2025/10/28 11:02:03 Participant Alice joined Chit Chat at logical time 1
+2025/10/28 11:02:03 [ @ 3] Server: Participant Alice joined Chit Chat at logical time 1 
+2025/10/28 11:03:04 Participant John joined Chit Chat at logical time 5
+2025/10/28 11:03:04 [ @ 7] Server: Participant John joined Chit Chat at logical time 5 
+2025/10/28 11:05:09 Participant Bob joined Chit Chat at logical time 9
+2025/10/28 11:05:09 [ @ 11] Server: Participant Bob joined Chit Chat at logical time 9 
+2025/10/28 11:14:48 [28-10-2025 11:14:48 @ 15] Alice: Hej 
+2025/10/28 11:20:38 Participant Alice left Chit Chat at logical time 17
+2025/10/28 11:20:38 [ @ 19] Server: Participant Alice left Chit Chat at logical time 17 
+2025/10/28 11:20:38 Stream closed for Alice (60f45023-390a-4349-a86c-728ce70337fe) at logical time: 21
+2025/10/28 11:24:43 [28-10-2025 11:24:43 @ 23] John:  
+2025/10/28 11:24:43 Client disconnected: John (5a5131c1-5686-4738-85ab-bff8345e2ffa) at logical time: 25
+2025/10/28 11:24:44 [28-10-2025 11:24:44 @ 27] Bob:  
+2025/10/28 11:24:44 Client disconnected: Bob (8a73753e-3380-4919-a413-f0c43ac4b11f) at logical time: 29
+```
+
+### Client 1 (Alice)
+
+```
+2025/10/28 11:02:03 [LT: 1] Subscribed successfully. Listening for messages...
+2025/10/28 11:02:03 [ @ 5] Server: Participant Alice joined Chit Chat at logical time 1 
+2025/10/28 11:03:04 [ @ 9] Server: Participant John joined Chit Chat at logical time 5 
+2025/10/28 11:05:09 [ @ 13] Server: Participant Bob joined Chit Chat at logical time 9 
+2025/10/28 11:14:48 [28-10-2025 11:14:48 @ 17] Alice: Hej 
+2025/10/28 11:20:38 [ @ 21] Server: Participant Alice left Chit Chat at logical time 17 
+2025/10/28 11:20:38 [LT: 21] Server closed stream.
+```
+
+### Client 2 (John)
+
+```
+2025/10/28 11:03:04 [LT: 1] Subscribed successfully. Listening for messages...
+2025/10/28 11:03:04 [ @ 5] Server: Participant Alice joined Chit Chat at logical time 1 
+2025/10/28 11:03:04 [ @ 9] Server: Participant John joined Chit Chat at logical time 5 
+2025/10/28 11:05:09 [ @ 13] Server: Participant Bob joined Chit Chat at logical time 9 
+2025/10/28 11:14:48 [28-10-2025 11:14:48 @ 17] Alice: Hej 
+2025/10/28 11:20:38 [ @ 21] Server: Participant Alice left Chit Chat at logical time 17 
+```
+
+### Client 3 (Bob)
+
+```
+2025/10/28 11:05:09 [LT: 1] Subscribed successfully. Listening for messages...
+2025/10/28 11:05:09 [ @ 5] Server: Participant Alice joined Chit Chat at logical time 1 
+2025/10/28 11:05:09 [ @ 9] Server: Participant John joined Chit Chat at logical time 5 
+2025/10/28 11:05:09 [ @ 13] Server: Participant Bob joined Chit Chat at logical time 9 
+2025/10/28 11:14:48 [28-10-2025 11:14:48 @ 17] Alice: Hej 
+2025/10/28 11:20:38 [ @ 21] Server: Participant Alice left Chit Chat at logical time 17 
+2025/10/28 11:24:43 [28-10-2025 11:24:43 @ 25] John:  
+```
+

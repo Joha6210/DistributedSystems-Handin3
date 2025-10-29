@@ -10,11 +10,6 @@ Carl Philip Steuch <caps@itu.dk> & Johannes Jensen <johje@itu.dk>
 
 ## 1. Streaming Model Selection
 
-### 1.1 Discussion
-
-- _Discuss, whether you are going to use server-side streaming,
-    client-side streaming, or bidirectional streaming?_
-
 - In our chit chat implementation we use server-side streaming ([1](https://grpc.io/docs/languages/go/basics/#server-side-streaming-rpc)), to send multiple messages from the server to the client. This is done to support long-lived logical flow of data from the server to the clients ([2](https://grpc.io/docs/guides/performance/))
 
 ---

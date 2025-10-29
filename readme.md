@@ -195,6 +195,8 @@ sequenceDiagram
     Server->>Client1: Ack Leave (LT=20)
 ```
 
+<div class="page"/>
+
 # Appendix
 
 ## Logs
